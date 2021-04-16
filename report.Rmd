@@ -6,25 +6,143 @@ output: html_document
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_chunk$set(echo = TRUE, cache = TRUE, message=FALSE, warning = FALSE)
 ```
 
-## R Markdown
+## Overview
+The goal of this project is to get familiar with the databases of text, perform a summary of the data and do the necessary cleaning.
+Large databases comprising of text in a target language are commonly used when generating language models for various purposes.
+The databases was obtained from news, blogs and twitter.
 
-This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+In first instance the data must be cleaned to later analyze what words appear more frequently.
+The clean process consist on:
 
-When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+1. Convert to lowercase all letters
+2. Erase the punctuation
+3. Erase each number
+4. Remove any english empty word
+5. Clean the white spaces
 
-```{r cars}
-summary(cars)
+After this, the most frequented word are showed on a wordcloud using the wordcloud library.
+On this kind of graphs, the size of the word depends of the frequency that it appears on the databases.
+More frequent the word, more bigger it will be shown on the graph.
+
+## Loading the data and showing summary values 
+
+```{r loading_data}
+# Loading libraries
+library(stringi)
+library(tm)
+library(wordcloud)
+library(dplyr)
+library(kableExtra)
+#
+# Checking if the data was previously downloaded
+source("get_data.R", local = knitr::knit_global())
+#
+# Loading the data into the workspace
+twitter <- readLines("./final/en_US/en_US.twitter.txt", 
+                     encoding = "UTF-8", skipNul = T)
+blogs   <- readLines("./final/en_US/en_US.blogs.txt", 
+                     encoding = "UTF-8", skipNul = T)
+news    <- readLines("./final/en_US/en_US.news.txt", 
+                     encoding = "UTF-8", skipNul = T)
+#
+# General Statistics 
+Twitter <- stri_stats_general(twitter)
+Blogs   <- stri_stats_general(blogs)
+News    <- stri_stats_general(news)
+#
+summary <- cbind(Twitter,Blogs,News)
+#
+# Showing a table with the summaries
+kbl(as.data.frame(summary),
+    caption="Text database summaries") %>%
+    kable_paper(bootstrap_options = "striped", full_width = F)
+```
+## Samplig the data to save memory
+
+```{r sampling}
+# for reproducibility
+set.seed(1525)
+#
+nsamples = 10000
+#
+# Sampling the data
+s.twitter <- sample(twitter, nsamples)
+s.blogs   <- sample(blogs, nsamples)
+s.news    <- sample(news, nsamples)
+#
+# Creating corpus for the tm library
+s.twitter <- Corpus(VectorSource(s.twitter) )  
+s.blogs   <- Corpus(VectorSource(s.blogs) )
+s.news    <- Corpus(VectorSource(s.news) )
 ```
 
-## Including Plots
+## Cleaning the data
 
-You can also embed plots, for example:
+```{r cleaning}
+# Cleaning the data
+#
+# All words to lower case
+s.twitter <- tm_map(s.twitter, tolower)  
+s.blogs   <- tm_map(s.blogs, tolower )
+s.news    <- tm_map(s.news, tolower)
 
-```{r pressure, echo=FALSE}
-plot(pressure)
+# Without punctuation
+s.twitter <- tm_map(s.twitter, removePunctuation)  
+s.blogs   <- tm_map(s.blogs, removePunctuation)
+s.news    <- tm_map(s.news, removePunctuation)
+
+# Without numbers
+s.twitter <- tm_map(s.twitter, removeNumbers)  
+s.blogs   <- tm_map(s.blogs, removeNumbers)
+s.news    <- tm_map(s.news, removeNumbers)
+
+# Without empty words
+s.twitter <- tm_map(s.twitter, removeWords, stopwords("english"))
+s.blogs   <- tm_map(s.blogs, removeWords, stopwords("english"))
+s.news    <- tm_map(s.news, removeWords, stopwords("english"))
+
+# Without white spaces
+s.twitter <- tm_map(s.twitter, stripWhitespace)  
+s.blogs   <- tm_map(s.blogs, stripWhitespace)
+s.news    <- tm_map(s.news, stripWhitespace)
 ```
 
-Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
+## Showing exploratory graphs
+
+```{r plots1, fig.cap=paste("More frecuented words from twitter database.")}
+# Plotting wordclouds to illustrate frequently words
+#
+wordcloud(s.twitter, 
+          max.words    = 200, 
+          random.order = FALSE,
+          rot.per      = 0.35, 
+          use.r.layout = FALSE,
+          scale        = c(3.5,0.25),
+          colors       = brewer.pal(8, "Dark2"),
+          main="Title")
+```
+```{r plots2, fig.cap=paste("More frecuented words from blogs database.")}
+wordcloud(s.blogs, 
+          max.words    = 200, 
+          random.order = FALSE,
+          rot.per      = 0.35, 
+          use.r.layout = FALSE,
+          scale        = c(3.5,0.25),
+          colors       = brewer.pal(8, "Dark2"))
+```
+
+```{r plots3, fig.cap=paste("More frecuented words from news database.")}
+wordcloud(s.news, 
+          max.words    = 200, 
+          random.order = FALSE,
+          rot.per      = 0.35, 
+          use.r.layout = FALSE,
+          colors       = brewer.pal(8, "Dark2"))
+```
+
+
+
+
