@@ -31,11 +31,7 @@ More frequent the word, more bigger it will be shown on the graph.
 
 ```{r loading_data}
 # Loading libraries
-library(stringi)
-library(tm)
-library(wordcloud)
-library(dplyr)
-library(kableExtra)
+
 #
 # Checking if the data was previously downloaded
 source("get_data.R", local = knitr::knit_global())
@@ -47,18 +43,6 @@ blogs   <- readLines("./final/en_US/en_US.blogs.txt",
                      encoding = "UTF-8", skipNul = T)
 news    <- readLines("./final/en_US/en_US.news.txt", 
                      encoding = "UTF-8", skipNul = T)
-#
-# General Statistics 
-Twitter <- stri_stats_general(twitter)
-Blogs   <- stri_stats_general(blogs)
-News    <- stri_stats_general(news)
-#
-summary <- cbind(Twitter,Blogs,News)
-#
-# Showing a table with the summaries
-kbl(as.data.frame(summary),
-    caption="Text database summaries") %>%
-    kable_paper(bootstrap_options = "striped", full_width = F)
 ```
 ## Samplig the data to save memory
 
@@ -66,83 +50,212 @@ kbl(as.data.frame(summary),
 # for reproducibility
 set.seed(1525)
 #
-nsamples = 10000
+nsamples = 2000
 #
 # Sampling the data
-s.twitter <- sample(twitter, nsamples)
-s.blogs   <- sample(blogs, nsamples)
-s.news    <- sample(news, nsamples)
+twitter <- sample(twitter, nsamples)
+blogs   <- sample(blogs, nsamples)
+news    <- sample(news, nsamples)
 #
-# Creating corpus for the tm library
-s.twitter <- Corpus(VectorSource(s.twitter) )  
-s.blogs   <- Corpus(VectorSource(s.blogs) )
-s.news    <- Corpus(VectorSource(s.news) )
+sData <- c(twitter, blogs, news)
+```
+In order to turn it into a tidy text dataset, we first need to put it into a data frame.
+
+```{r}
+library(dplyr)
+text_df <- tibble(text = sData)
 ```
 
-## Cleaning the data
+## Cleaning data
 
-```{r cleaning}
-# Cleaning the data
+Create filters: stopwords, profanity, non-alphanumeric's, url's, repeated letters(+3x).
+
+```{r}
+data(stop_words)
+library(readr)
+library(tidytext)
+library(stringr)
 #
-# All words to lower case
-s.twitter <- tm_map(s.twitter, tolower)  
-s.blogs   <- tm_map(s.blogs, tolower )
-s.news    <- tm_map(s.news, tolower)
+# Remove profanities - list from http://www.bannedwordlist.com/lists/swearWords.csv, and stored in final/en_US folder
+profanities <- read_delim("./final/en_US/swearWords.csv", delim = "\n", col_names = FALSE)
 
-# Without punctuation
-s.twitter <- tm_map(s.twitter, removePunctuation)  
-s.blogs   <- tm_map(s.blogs, removePunctuation)
-s.news    <- tm_map(s.news, removePunctuation)
+profanities <- unnest_tokens(profanities, word, X1)
+replace_reg <- "[^[:alpha:][:space:]]*"
+replace_url <- "http[^[:space:]]*"
+replace_aaa <- "\\b(?=\\w*(\\w)\\1)\\w+\\b"  
 
-# Without numbers
-s.twitter <- tm_map(s.twitter, removeNumbers)  
-s.blogs   <- tm_map(s.blogs, removeNumbers)
-s.news    <- tm_map(s.news, removeNumbers)
-
-# Without empty words
-s.twitter <- tm_map(s.twitter, removeWords, stopwords("english"))
-s.blogs   <- tm_map(s.blogs, removeWords, stopwords("english"))
-s.news    <- tm_map(s.news, removeWords, stopwords("english"))
-
-# Without white spaces
-s.twitter <- tm_map(s.twitter, stripWhitespace)  
-s.blogs   <- tm_map(s.blogs, stripWhitespace)
-s.news    <- tm_map(s.news, stripWhitespace)
+text_df <- text_df %>%
+  mutate(text = str_replace_all(text, replace_reg, "")) %>%
+  mutate(text = str_replace_all(text, replace_url, "")) %>%
+  mutate(text = str_replace_all(text, replace_aaa, "")) %>% 
+  mutate(text = iconv(text, "ASCII//TRANSLIT"))
 ```
 
-## Showing exploratory graphs
+## Transform the text to a tidy data structure
 
-```{r plots1, fig.cap=paste("More frecuented words from twitter database.")}
-# Plotting wordclouds to illustrate frequently words
-#
-wordcloud(s.twitter, 
-          max.words    = 200, 
-          random.order = FALSE,
-          rot.per      = 0.35, 
-          use.r.layout = FALSE,
-          scale        = c(3.5,0.25),
-          colors       = brewer.pal(8, "Dark2"),
-          main="Title")
-```
-```{r plots2, fig.cap=paste("More frecuented words from blogs database.")}
-wordcloud(s.blogs, 
-          max.words    = 200, 
-          random.order = FALSE,
-          rot.per      = 0.35, 
-          use.r.layout = FALSE,
-          scale        = c(3.5,0.25),
-          colors       = brewer.pal(8, "Dark2"))
+Removing stop words:
+
+```{r unnigrams}
+unigram <- text_df %>%
+  unnest_tokens(word, text) %>%
+  anti_join(profanities) %>%
+  anti_join(stop_words)
 ```
 
-```{r plots3, fig.cap=paste("More frecuented words from news database.")}
-wordcloud(s.news, 
-          max.words    = 200, 
-          random.order = FALSE,
-          rot.per      = 0.35, 
-          use.r.layout = FALSE,
-          colors       = brewer.pal(8, "Dark2"))
+```{r bigrams}
+bigram <- text_df  %>%
+  unnest_tokens(bigram, text, token = "ngrams", n = 2)
+```
+
+```{r trigrams}
+trigram <- text_df  %>%
+  unnest_tokens(trigram, text, token = "ngrams", n = 3)
+```
+
+```{r quadgrams}
+quadgram <- text_df  %>%
+  unnest_tokens(quadgram, text, token = "ngrams", n = 4)
+```
+
+## Finding the most common words of unigrams
+
+```{r cleaning2}
+library(wordcloud)
+pal <- brewer.pal(8,"Dark2")
+unigram %>%
+  count(word) %>%
+  with(wordcloud(word, n, random.order = FALSE, max.words = 50, colors=pal))
 ```
 
 
+## creating a visualization of the frequency of most common words 
 
+```{r}
+library(ggplot2)
+
+p <- unigram %>%
+  count(word, sort = TRUE) %>%
+  filter(n > 50) %>%
+  mutate(word = reorder(word, n)) %>%
+  head(15) %>%
+  ggplot(aes(n, word)) +
+  geom_col(colour="black", fill="red") +
+  labs(y = NULL)
+p
+```
+
+
+## Counting and filtering n-grams
+Bigrams:
+
+```{r}
+library(tidyr)
+
+bigram_counts <- bigram %>%
+  separate(bigram, c("word1", "word2"), sep = " ") %>%
+  # filter(!word1 %in% stop_words$word) %>%
+  # filter(!word2 %in% stop_words$word) %>%
+  # filter(!word1 %in% profanities$word) %>%
+  # filter(!word2 %in% profanities$word) %>%
+  count(word1, word2, sort = TRUE)
+
+# recombined  bigrams
+# bigrams_united <- bigrams_filtered %>%
+#   unite(bigram, word1, word2, sep = " ")
+```
+
+Trigrams:
+
+```{r}
+trigrams_counts <- trigram %>%
+  separate(trigram, c("word1", "word2", "word3"), sep = " ") %>%
+  # filter(!word1 %in% stop_words$word,
+  #        !word2 %in% stop_words$word,
+  #        !word3 %in% stop_words$word,
+  #        !word1 %in% profanities$word,
+  #        !word2 %in% profanities$word,
+  #        !word3 %in% profanities$word,) %>%
+  count(word1, word2, word3, sort = TRUE)
+```
+
+Quadgrams:
+```{r}
+quadgrams_counts <- quadgram %>%
+  separate(quadgram, c("word1", "word2", "word3", "word4"), sep = " ") %>%
+  # filter(!word1 %in% stop_words$word,
+  #        !word2 %in% stop_words$word,
+  #        !word3 %in% stop_words$word,
+  #        !word4 %in% stop_words$word,
+  #        !word1 %in% profanities$word,
+  #        !word2 %in% profanities$word,
+  #        !word3 %in% profanities$word,
+  #        !word4 %in% profanities$word,) %>%
+  count(word1, word2, word3, word4, sort = TRUE)
+```
+
+Quintgrams:
+```{r}
+quintgrams_counts <- text_df  %>%
+  unnest_tokens(quintgram, text, token = "ngrams", n = 5) %>%
+  separate(quintgram, c("word1", "word2", "word3", "word4", "word5"), sep = " ") %>%
+  # filter(!word1 %in% stop_words$word,
+  #        !word2 %in% stop_words$word,
+  #        !word3 %in% stop_words$word,
+  #        !word4 %in% stop_words$word,
+  #        !word5 %in% stop_words$word,
+  #        !word1 %in% profanities$word,
+  #        !word2 %in% profanities$word,
+  #        !word3 %in% profanities$word,
+  #        !word4 %in% profanities$word,
+  #        !word5 %in% profanities$word,) %>%
+  count(word1, word2, word3, word4, word5, sort = TRUE)
+```
+
+Sextgrams:
+```{r}
+sextgrams_counts <- text_df  %>%
+  unnest_tokens(sextgram, text, token = "ngrams", n = 6) %>%
+  separate(sextgram, c("word1", "word2", "word3", "word4", "word5", "word6"), sep = " ") %>%
+  # filter(!word1 %in% stop_words$word,
+  #        !word2 %in% stop_words$word,
+  #        !word3 %in% stop_words$word,
+  #        !word4 %in% stop_words$word,
+  #        !word5 %in% stop_words$word,
+  #        !word6 %in% stop_words$word,
+  #        !word1 %in% profanities$word,
+  #        !word2 %in% profanities$word,
+  #        !word3 %in% profanities$word,
+  #        !word4 %in% profanities$word,
+  #        !word5 %in% profanities$word,
+  #        !word6 %in% profanities$word,) %>%
+  count(word1, word2, word3, word4, word5, word6, sort = TRUE)
+```
+
+## Reduce n-grams files
+```{r}
+# Bigrams
+bigram_counts <- bigram_counts %>%
+  filter(n > 10) %>%
+  arrange(desc(n))  
+
+# Trigrams
+trigrams_counts <- trigrams_counts %>%
+  filter(n > 10) %>%
+  arrange(desc(n)) 
+
+# # Quadgrams
+# quadgrams_counts <- quadgrams_counts %>%
+#   filter(n > 10) %>%
+#   arrange(desc(n)) 
+# 
+# # Quintgrams
+# quintgrams_counts <- quintgrams_counts %>%
+#   filter(n > 10) %>%
+#   arrange(desc(n)) 
+# 
+# # Sextgrams
+# sextgrams_counts <- sextgrams_counts %>%
+#   filter(n > 10) %>%
+#   arrange(desc(n)) 
+```
 
