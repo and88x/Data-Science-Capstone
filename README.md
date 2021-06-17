@@ -3,8 +3,6 @@ Data Science Capstone
 Andres Fernando Garcia
 3/31/2021
 
-<img src="./logo.svg" alt="logo" style="position:absolute; top:0; right:0; padding:10px; height:75px; width:150px "/>
-
 ## Overview
 
 The goal of this project is to get familiar with the databases of text,
@@ -26,12 +24,6 @@ After this, the most frequented word are showed on a wordcloud using the
 wordcloud library. On this kind of graphs, the size of the word depends
 of the frequency that it appears on the databases. More frequent the
 word, more bigger it will be shown on the graph.
-
-You can taste the app follow [this
-link](https://and88x.shinyapps.io/Text_predictor/). A simple
-presentation is shown in [this
-link](https://and88x.shinyapps.io/Data_Science_Capstone/#1) about the
-app.
 
 ## Loading the data and showing summary values
 
@@ -142,7 +134,7 @@ unigram %>%
   with(wordcloud(word, n, random.order = FALSE, max.words = 50, colors=pal))
 ```
 
-![](report_files/cloud-1.png)<!-- -->
+![](report_files/figure-gfm/cleaning2-1.png)<!-- -->
 
 ## creating a visualization of the frequency of most common words
 
@@ -160,7 +152,7 @@ p <- unigram %>%
 p
 ```
 
-![](report_files/most_common-1.png)<!-- -->
+![](report_files/figure-gfm/unnamed-chunk-3-1.png)<!-- -->
 
 ## Counting and filtering n-grams
 
@@ -187,6 +179,12 @@ Trigrams:
 ``` r
 trigrams_counts <- trigram %>%
   separate(trigram, c("word1", "word2", "word3"), sep = " ") %>%
+  # filter(!word1 %in% stop_words$word,
+  #        !word2 %in% stop_words$word,
+  #        !word3 %in% stop_words$word,
+  #        !word1 %in% profanities$word,
+  #        !word2 %in% profanities$word,
+  #        !word3 %in% profanities$word,) %>%
   count(word1, word2, word3, sort = TRUE)
 ```
 
@@ -195,6 +193,14 @@ Quadgrams:
 ``` r
 quadgrams_counts <- quadgram %>%
   separate(quadgram, c("word1", "word2", "word3", "word4"), sep = " ") %>%
+  # filter(!word1 %in% stop_words$word,
+  #        !word2 %in% stop_words$word,
+  #        !word3 %in% stop_words$word,
+  #        !word4 %in% stop_words$word,
+  #        !word1 %in% profanities$word,
+  #        !word2 %in% profanities$word,
+  #        !word3 %in% profanities$word,
+  #        !word4 %in% profanities$word,) %>%
   count(word1, word2, word3, word4, sort = TRUE)
 ```
 
@@ -204,6 +210,16 @@ Quintgrams:
 quintgrams_counts <- text_df  %>%
   unnest_tokens(quintgram, text, token = "ngrams", n = 5) %>%
   separate(quintgram, c("word1", "word2", "word3", "word4", "word5"), sep = " ") %>%
+  # filter(!word1 %in% stop_words$word,
+  #        !word2 %in% stop_words$word,
+  #        !word3 %in% stop_words$word,
+  #        !word4 %in% stop_words$word,
+  #        !word5 %in% stop_words$word,
+  #        !word1 %in% profanities$word,
+  #        !word2 %in% profanities$word,
+  #        !word3 %in% profanities$word,
+  #        !word4 %in% profanities$word,
+  #        !word5 %in% profanities$word,) %>%
   count(word1, word2, word3, word4, word5, sort = TRUE)
 ```
 
@@ -213,11 +229,18 @@ Sextgrams:
 sextgrams_counts <- text_df  %>%
   unnest_tokens(sextgram, text, token = "ngrams", n = 6) %>%
   separate(sextgram, c("word1", "word2", "word3", "word4", "word5", "word6"), sep = " ") %>%
-  count(word1, word2, word3, word4, word5, word6, sort = TRUE)
-#
-heptagrams_counts <- text_df  %>%
-  unnest_tokens(heptagram, text, token = "ngrams", n = 7) %>%
-  separate(heptagram, c("word1", "word2", "word3", "word4", "word5", "word6", "word7"), sep = " ") %>%
+  # filter(!word1 %in% stop_words$word,
+  #        !word2 %in% stop_words$word,
+  #        !word3 %in% stop_words$word,
+  #        !word4 %in% stop_words$word,
+  #        !word5 %in% stop_words$word,
+  #        !word6 %in% stop_words$word,
+  #        !word1 %in% profanities$word,
+  #        !word2 %in% profanities$word,
+  #        !word3 %in% profanities$word,
+  #        !word4 %in% profanities$word,
+  #        !word5 %in% profanities$word,
+  #        !word6 %in% profanities$word,) %>%
   count(word1, word2, word3, word4, word5, word6, sort = TRUE)
 ```
 
@@ -225,96 +248,27 @@ heptagrams_counts <- text_df  %>%
 
 ``` r
 # Bigrams
-# bigram_counts <- bigram_counts %>%
-#   filter(n > 10) %>%
-#   arrange(desc(n))  
-# 
-# # Trigrams
-# trigrams_counts <- trigrams_counts %>%
-#   filter(n > 10) %>%
-#   arrange(desc(n)) 
-# 
+bigram_counts <- bigram_counts %>%
+  filter(n > 10) %>%
+  arrange(desc(n))  
+
+# Trigrams
+trigrams_counts <- trigrams_counts %>%
+  filter(n > 10) %>%
+  arrange(desc(n)) 
+
 # # Quadgrams
 # quadgrams_counts <- quadgrams_counts %>%
 #   filter(n > 10) %>%
-#   arrange(desc(n))
-
-# Quintgrams
+#   arrange(desc(n)) 
+# 
+# # Quintgrams
 # quintgrams_counts <- quintgrams_counts %>%
 #   filter(n > 10) %>%
-#   arrange(desc(n))
+#   arrange(desc(n)) 
 # 
 # # Sextgrams
 # sextgrams_counts <- sextgrams_counts %>%
 #   filter(n > 10) %>%
-#   arrange(desc(n))
-# 
-# # Heptagrams
-# heptagrams_counts <- heptagrams_counts %>%
-#   filter(n > 10) %>%
-#   arrange(desc(n))
-```
-
-## Task 04: Prediction Model
-
-Create Ngram Matching Functions
-
-``` r
-bigram <- function(input_words){
-                    num <- length(input_words)
-                    filter(bigram_counts, 
-                          word1==input_words[num]) %>% 
-                    top_n(1, n) %>%
-                    filter(row_number() == 1L) %>%
-                    select(num_range("word", 2)) %>%
-                    as.character() -> out
-                    ifelse(out =="character(0)", "?", return(out))
-}
-trigram <- function(input_words){
-                    num <- length(input_words)
-                    filter(trigrams_counts, 
-                            word1==input_words[num-1], 
-                            word2==input_words[num])  %>% 
-                    top_n(1, n) %>%
-                    filter(row_number() == 1L) %>%
-                    select(num_range("word", 3)) %>%
-                    as.character() -> out
-                    ifelse(out=="character(0)", bigram(input_words), return(out))
-}
-
-quadgram <- function(input_words){
-                    num <- length(input_words)
-                    filter(quadgrams_counts, 
-                            word1==input_words[num-2], 
-                            word2==input_words[num-1], 
-                            word3==input_words[num])  %>% 
-                    top_n(1, n) %>%
-                    filter(row_number() == 1L) %>%
-                    select(num_range("word", 4)) %>%
-                    as.character() -> out
-                    ifelse(out=="character(0)", trigram(input_words), return(out))
-}
-```
-
-Create User Input and Data Cleaning Function; Calls the matching
-functions
-
-``` r
-ngrams <- function(input){
-  # Create a dataframe
-  input <- tibble(text = input)
-  # Clean the Inpput
-  replace_reg <- "[^[:alpha:][:space:]]*"
-  input <- input %>%
-    mutate(text = str_replace_all(text, replace_reg, ""))
-  # Find word count, separate words, lower case
-  input_count <- str_count(input, boundary("word"))
-  input_words <- unlist(str_split(input, boundary("word")))
-  # input_words <- tolower(input_words)
-  # Call the matching functions
-  out <- ifelse(input_count == 1, bigram(input_words), 
-              ifelse (input_count == 2, trigram(input_words), quadgram(input_words)))
-  # Output
-  return(out)
-}
+#   arrange(desc(n)) 
 ```

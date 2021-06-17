@@ -2,11 +2,11 @@
 title: "Data Science Capstone"
 author: "Andres Fernando Garcia"
 date: "3/31/2021"
-output: html_document
+output: github_document
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE, cache = TRUE, message=FALSE, warning = FALSE)
+knitr::opts_chunk$set(echo = TRUE, cache = FALSE, message=FALSE, warning = FALSE)
 ```
 
 ## Overview
@@ -34,7 +34,7 @@ More frequent the word, more bigger it will be shown on the graph.
 
 #
 # Checking if the data was previously downloaded
-source("get_data.R", local = knitr::knit_global())
+source("./R/get_data.R", local = knitr::knit_global())
 #
 # Loading the data into the workspace
 twitter <- readLines("./final/en_US/en_US.twitter.txt", 
