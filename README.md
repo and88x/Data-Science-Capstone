@@ -25,7 +25,7 @@ wordcloud library. On this kind of graphs, the size of the word depends
 of the frequency that it appears on the databases. More frequent the
 word, more bigger it will be shown on the graph.
 
-You can test the app follow [this
+You can test the app following [this
 link](https://and88x.shinyapps.io/Text_predictor/?_ga=2.204867216.180483240.1623951373-822898648.1623951373).
 A small presentation about the app is in [this
 link](https://and88x.shinyapps.io/Data_Science_Capstone/?_ga=2.204867216.180483240.1623951373-822898648.1623951373#1).
