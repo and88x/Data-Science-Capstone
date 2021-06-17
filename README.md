@@ -142,7 +142,7 @@ unigram %>%
   with(wordcloud(word, n, random.order = FALSE, max.words = 50, colors=pal))
 ```
 
-![](report_files/figure-gfm/cleaning2-1.png)<!-- -->
+![](report_files/cloud-1.png)<!-- -->
 
 ## creating a visualization of the frequency of most common words
 
@@ -160,7 +160,7 @@ p <- unigram %>%
 p
 ```
 
-![](report_files/figure-gfm/unnamed-chunk-4-1.png)<!-- -->
+![](report_files/most_common-1.png)<!-- -->
 
 ## Counting and filtering n-grams
 
